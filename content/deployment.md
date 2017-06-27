@@ -1,6 +1,5 @@
 ---
 title: Deployment and Monitoring
-order: 41
 description: How to deploy, run, and monitor your Meteor app in production.
 discourseTopicId: 19668
 ---
@@ -21,6 +20,10 @@ Once you've built and tested your Meteor application, you need to put it online 
 Deploying a web application is fundamentally different to releasing most other kinds of software, in that you can deploy as often as you'd like to. You don't need to wait for users to do something to get the new version of your software because the server will push it right at them.
 
 However, it's still important to test your changes throughly with a good process of Quality Assurance (QA). Although it's easy to push out fixes to bugs, those bugs can still cause major problems to users and even potentially data corruption!
+
+> <h3 id="never-use-production-flag">Never use `--production` flag to deploy!</h3>
+>
+> `--production` flag is purely meant to simulate production minification, but does almost nothing else. This still watches source code files, exchanges data with package server and does a lot more than just running the app, leading to unnecessary computing resource wasting and security issues. Please don't use `--production` flag to deploy!
 
 <h3 id="environments">Deployment environments</h3>
 
@@ -53,11 +56,11 @@ There are some other considerations that you should make before you deploy your 
 
 <h3 id="domain-name">Domain name</h3>
 
-What URL will users use to access your site? You'll probably need to register a domain name with a domain registrar, and setup DNS entries to point to the site (this will depend on how you deploy, see below). If you deploy to Galaxy, you can use a `x.meteorapp.com` domain while you are testing the app.
+What URL will users use to access your site? You'll probably need to register a domain name with a domain registrar, and setup DNS entries to point to the site (this will depend on how you deploy, see below). If you deploy to Galaxy, you can use a `x.meteorapp.com` or `x.eu.meteorapp.com` domain while you are testing the app. [Learn more about Galaxy domains »](http://galaxy-guide.meteor.com/custom-domains.html#meteorapp-subdomain)
 
 <h3 id="ssl">SSL Certificate</h3>
 
-It's always a good idea to use SSL for Meteor applications (see the [Security Article](security.html#ssl) to find out why). Once you have a registered domain name, you'll need to generate an SSL certificate with a certificate authority for your domain.
+It's always a good idea to use SSL for Meteor applications (see the [Security Article](security.html#ssl) to find out why). Once you have a registered domain name, you'll need to generate an SSL certificate with a certificate authority for your domain. If you deploy to Galaxy, you can [generate a free SSL certificate with a single click](http://galaxy-guide.meteor.com/encryption.html#lets-encrypt) (courtesy of Let's Encrypt!).
 
 <h3 id="cdn">CDN</h3>
 
@@ -97,7 +100,7 @@ If you are hosting a webfont as part of your application and serving it via a CD
 import { WebApp } from 'meteor/webapp';
 
 WebApp.rawConnectHandlers.use(function(req, res, next) {
-  if (req._parsedUrl.pathname.match(/\.(ttf|ttc|otf|eot|woff|font\.css|css)$/)) {
+  if (req._parsedUrl.pathname.match(/\.(ttf|ttc|otf|eot|woff|woff2|font\.css|css)$/)) {
     res.setHeader('Access-Control-Allow-Origin', /* your hostname, or just '*' */);
   }
   next();
@@ -129,8 +132,10 @@ In order to deploy to Galaxy, you'll need to [sign up for an account](https://ww
 Once you've done that, it's easy to [deploy to Galaxy](http://galaxy-guide.meteor.com/deploy-guide.html). You just need to [add some environment variables to your settings file](http://galaxy-guide.meteor.com/environment-variables.html) to point it at your MongoDB, and you can deploy with:
 
 ```bash
-DEPLOY_HOSTNAME=us-east-1.galaxy-deploy.meteor.com meteor deploy your-app.com --settings production-settings.json
+DEPLOY_HOSTNAME=galaxy.meteor.com meteor deploy your-app.com --settings production-settings.json
 ```
+
+To deploy to the EU region, set DEPLOY_HOSTNAME to eu-west-1.galaxy.meteor.com.
 
 In order for Galaxy to work with your custom domain (`your-app.com` in this case), you need to [set up your DNS to point at Galaxy](http://galaxy-guide.meteor.com/dns.html). Once you've done this, you should be able to reach your site from a browser.
 
@@ -138,21 +143,37 @@ You can also log into the Galaxy UI at https://galaxy.meteor.com. Once there you
 
 <img src="images/galaxy-org-dashboard.png">
 
-If you are following [our advice](security.html#ssl), you'll probably want to [set up SSL](http://galaxy-guide.meteor.com/encryption.html) on your Galaxy application with the certificate and key for your domain. The key things here are to add the `force-ssl` package and to use the Galaxy UI to add your SSL certificate.
+If you are following [our advice](security.html#ssl), you'll probably want to [set up SSL](http://galaxy-guide.meteor.com/encryption.html) on your Galaxy application with the certificate and key for your domain. You should also read the [Security](security.html#ssl) section of this guide for information on how to forcibly redirect HTTP to HTTPS.
 
 Once you are setup with Galaxy, deployment is simple (just re-run the `meteor deploy` command above), and scaling is even easier---simply log into galaxy.meteor.com, and scale instantly from there.
 
 <img src="images/galaxy-scaling.png">
 
-<h4 id="galaxy-mongo">MongoDB hosting services to use with Galaxy</h4>
-
-If you are using Galaxy (or need a production quality, managed MongoDB for one of the other options listed here), it's usually a good idea to use a [MongoDB hosting provider](http://galaxy-guide.meteor.com/mongodb.html). There are a variety of options out there, but a good choice is [mLab](https://mlab.com/). The main things to look for are support for oplog tailing, and a presence in the us-east-1 or eu-west-1 AWS region.
-
 <h3 id="mup">Meteor Up</h3>
 
-[Meteor Up X](https://github.com/arunoda/meteor-up/tree/mupx), often referred to as "mupx", is an open source tool that can be used to deploy Meteor application to any online server over SSH. Mup handles some of the essential deployment requirements, but you will still need to do a lot of work to get your load balancing and version updates working smoothly - it's essentially a way to automate the manual steps of using `meteor build` and putting that bundle on your server.
+Meteor Up, often referred to as "mupx" or "mup", is a third-party open-source tool that can be used to deploy Meteor application to any online server over SSH. It handles some of the essential deployment requirements, but you will still need to do a lot of work to get your load balancing and version updates working smoothly.  It's essentially a way to automate the manual steps of using `meteor build` and putting that bundle on your server.
 
-You can obtain a server running Ubuntu or Debian from many generic hosting providers. Mup can SSH into your server with the keys you provide in the config. You can also [watch this video](https://www.youtube.com/watch?v=WLGdXtZMmiI) for a more complete walkthrough on how to do it.
+You can obtain a server running Ubuntu or Debian from many generic hosting providers and Meteor Up can SSH into your server with the keys you provide in the config. You can also [watch this video](https://www.youtube.com/watch?v=WLGdXtZMmiI) for a more complete walkthrough on how to do it.
+
+Meteor Up has multiple projects so select what is best for your project:
+* Original [Meteor Up](https://github.com/arunoda/meteor-up) (not generally recommended any longer)
+* The [`mupx`](https://github.com/arunoda/meteor-up/tree/mupx) branch (best for pre-Meteor 1.4)
+* The [`kadirahq/mup`](https://github.com/kadirahq/meteor-up) fork _(best for Meteor 1.4 or higher)_
+
+> Currently, using Meteor Up with Meteor 1.4 requires `kadirahq/mup` (still in development) and a special docker image with the correct Node version.
+
+For further assistance, consult the documentation for the option you select.
+
+<h3 id="docker">Docker</h3>
+
+To orchestrate your own container-based deployment there are existing base images to consider before rolling your own:
+
+ - **[jshimko/meteor-launchpad](https://github.com/jshimko/meteor-launchpad)**
+ - [meteorhacks/meteord](https://github.com/kadirahq/meteord)
+ - [chriswessels/meteor-tupperware](https://github.com/chriswessels/meteor-tupperware)
+
+
+_The recommendation above is primarily based on current state of maintenance to address upstream security vulnerabilities. Review the Dockerfiles and build scripts to make your own assessment._
 
 <h3 id="custom-deployment">Custom deployment</h3>
 
@@ -166,15 +187,58 @@ npm install --production
 meteor build /path/to/build --architecture os.linux.x86_64
 ```
 
-To run this application, you need to provide Node.js 0.10.x and a MongoDB server. The current release of Meteor has been tested with Node 0.10.43. You can then run the application by invoking `node`, a ROOT_URL, and the MongoDB endpoint.
+This will provide you with a bundled application `.tar.gz` which you can extract and run without the `meteor` tool.  The environment you choose will need the correct version of Node.js and connectivity to a MongoDB server.
+
+Depending on the version of Meteor you are using, you should install the proper version of `node` using the appropriate installation process for your platform.
+* Node 4.6.2 for *Meteor 1.4.x*
+* Node 0.10.43 for *Meteor 1.3.x and earlier*
+
+> If you use a mis-matched version of Node when deploying your application, you will encounter errors!
+
+You can then run the application by invoking `node` with a `ROOT_URL`, and `MONGO_URL`.  These instructions are also available in the `README` file found in the root of the bundle you built above.
 
 ```bash
-cd my_directory
+cd my_build_bundle_directory
 (cd programs/server && npm install)
 MONGO_URL=mongodb://localhost:27017/myapp ROOT_URL=http://my-app.com node main.js
 ```
 
-However, unless you have a specific need to roll your own hosting environment, the other options here are definitely easier, and probably make for a better setup than doing everything from scratch. Operating a Meteor app in a way that it works correctly for everyone can be complex, and [Galaxy](#galaxy) handles a lot of the specifics like routing clients to the right containers and handling coordinated version updates for you.
+* `ROOT_URL` is the base URL for your Meteor project
+* `MONGO_URL` is a [Mongo connection string URI](https://docs.mongodb.com/manual/reference/connection-string/) supplied by the MongoDB provider.
+
+
+Unless you have a specific need to roll your own hosting environment, the other options here are definitely easier, and probably make for a better setup than doing everything from scratch. Operating a Meteor app in a way that it works correctly for everyone can be complex, and [Galaxy](#galaxy) handles a lot of the specifics like routing clients to the right containers and handling coordinated version updates for you.
+
+<h2 id="galaxy-mongo">MongoDB options</h2>
+
+When you deploy your Meteor server, you need a `MONGO_URL` that points to your MongoDB database. You can either use a hosted MongoDB service or set up and run your own MongoDB server. We recommend using a hosted service, as the time saved and peace of mind are usually worth the higher monthly cost. In either case, the database should be hosted in the same region as the Meteor server (for lower latency). For example if your app is hosted on Galaxy in `us-east-1` (on AWS), then you could create a database on [Compose](https://www.compose.io) in `AWS us-east-1` or on [Amazon Lightsail](https://amazonlightsail.com/) in `us-east-1`.
+
+<h3 id="hosted-service">Hosted service (recommended)</h3>
+
+There are a variety of services out there, and we recommend that you select one of the below services depending on your requirements:
+
+* [mLab](https://www.mlab.com)
+* [Compose](https://www.compose.io)
+* [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+
+When selecting a hosted MongoDB service for production it is important to assess the features that the service provides. Below is a nonexhaustive list of features to consider when selecting a service:
+
+* Supports the MongoDB version you wish to run
+* Storage Engine Support (MMAPv1 or WiredTiger) – Since Meteor 1.4 WiredTiger is the default storage engine
+* Support for Replica Sets & Oplog tailing
+* Monitoring & Automated alerting
+* Continuous backups & Automated snapshots
+* Access Control, IP whitelisting, and AWS VPC Peering
+* Encryption of data in-flight and at-rest
+* Cost and pricing granularity
+* Instance size & options
+* Instance configurability – Independently configure your CPU, memory, storage and disk I/O speed.
+
+You can read this [detailed guide](https://www.okgrow.com/posts/mongodb-atlas-setup) by OK GROW! for step-by-step instructions to deploying a production ready MongoDB database on MongoDB Atlas.
+
+<h3 id="own-server">Own server</h3>
+
+You can install MongoDB on your own server—one you own, rent, or a VPS (recommended) like [DigitalOcean](https://www.digitalocean.com/) or [Lightsail](https://amazonlightsail.com/). As you can see from the above section, there are many aspects of database setup and maintenance that you have to take care of. For example, to get the best performance, you should choose a server with an [SSD](https://docs.mongodb.com/manual/administration/production-notes/#use-solid-state-disks-ssds) large enough to fit your data and with enough RAM to fit the working set (indexes + active documents) in memory.
 
 <h2 id="process">Deployment process</h2>
 
@@ -188,7 +252,7 @@ It's a good idea to have a release process that you follow in releasing your app
 4. Once you are satisfied with the staging release, release the *exact same* version to production.
 5. Run final QA on production.
 
-Steps 2. and 5. can be quite time-consuming, especially if you are aiming to maintain a high level of quality in your application. That's why it's a great idea to develop a suite of acceptance tests (see our [Testing Article](XXX) for more on this). To take things even further, you could run a load/stress test against your staging server on every release.
+Steps 2. and 5. can be quite time-consuming, especially if you are aiming to maintain a high level of quality in your application. That's why it's a great idea to develop a suite of acceptance tests (see our [Testing Article](https://guide.meteor.com/testing.html) for more on this). To take things even further, you could run a load/stress test against your staging server on every release.
 
 <h3 id="continuous-deployment">Continuous deployment</h3>
 
@@ -299,8 +363,8 @@ In this screenshot we can see that observers are fairly steadily created and des
 
 If your application contains a lot of publicly accessible content, then you probably want it to rank well in Google and other search engines' indexes. As most webcrawlers do not support client-side rendering (or if they do, have spotty support for websockets), it's better to render the site on the server and deliver it as HTML in this special case.
 
-To do so, we can use the [Prerender.io](https://prerender.io) service, thanks to the [`dfischer:prerenderio`](https://atmospherejs.com/dfischer/prerenderio) package. It's a simple as `meteor add`-ing it, and optionally setting your prerender token if you have a premium prerender account and would like to enable more frequent cache changes.
+To do so, we can use the [Prerender.io](https://prerender.io) service, thanks to the [`dferber:prerender`](https://atmospherejs.com/dferber/prerender/) package. It's a simple as `meteor add`-ing it, and optionally setting your prerender token if you have a premium prerender account and would like to enable more frequent cache changes.  You can also just use the [`prerender-node` NPM package](https://www.npmjs.com/package/prerender-node) directly, mimicing the small amount of [client](https://github.com/dferber90/meteor-prerender/blob/master/client/prerender.html) and [server](https://github.com/dferber90/meteor-prerender/blob/master/server/prerender.js) code in the Atmosphere package; do this if you need to use a newer version of the NPM package than the one in `dferber:prerender`.
 
-If you’re using [Galaxy to host your meteor apps](https://www.meteor.com/galaxy/signup), you can also take advantage of built-in automatic [Prerender.io](https://prerender.io) integration. Simply add [`mdg:seo`](https://atmospherejs.com/mdg/seo) to your app and Galaxy will take care of the rest.
+If you’re using [Galaxy to host your meteor apps](https://www.meteor.com/galaxy/signup), you can also take advantage of built-in automatic [Prerender.io](https://prerender.io) integration. Simply add [`mdg:seo`](https://atmospherejs.com/mdg/seo) to your app and Galaxy will take care of the rest: loading the code and configuring it with Galaxy-provided credentials.
 
 Chances are you also want to set `<title>` tags and other `<head>` content to make your site appear nicer in search results. The best way to do so is to use the [`kadira:dochead`](https://atmospherejs.com/kadira/dochead) package. The sensible place to call out to `DocHead` is from the `onCreated` callbacks of your page-level components.

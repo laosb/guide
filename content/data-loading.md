@@ -1,6 +1,5 @@
 ---
 title: Publications and Data Loading
-order: 11
 description: How and where to load data in your Meteor app using publications and subscriptions.
 discourseTopicId: 19661
 ---
@@ -136,7 +135,7 @@ In this code snippet we can see two important techniques for subscribing in Blaz
 
 2. Calling `this.autorun` sets up a reactive context which will re-initialize the subscription whenever the reactive function `this.getListId()` changes.
 
-Read more about Blaze subscriptions in the [Blaze article](blaze.html#subscribing), and about tracking loading state inside UI components in the [UI article](ui-ux.html#subscription-readiness).
+Read more about Blaze subscriptions in the [Blaze article](http://blazejs.org/api/templates.html#Blaze-TemplateInstance-subscribe), and about tracking loading state inside UI components in the [UI article](ui-ux.html#subscription-readiness).
 
 <h3 id="fetching">Fetching data</h3>
 
@@ -168,7 +167,7 @@ Across Meteor applications, there are some common patterns of data loading and m
 
 <h3 id="readiness">Subscription readiness</h3>
 
-It is key to understand that a subscription will not instantly provide its data. There will be a latency between subscribing to the data on the client and it arriving from the publication on the server. You should also be aware that this delay may be a lot longer for your users in production that for you locally in development!
+It is key to understand that a subscription will not instantly provide its data. There will be a latency between subscribing to the data on the client and it arriving from the publication on the server. You should also be aware that this delay may be a lot longer for your users in production than for you locally in development!
 
 Although the Tracker system means you often don't *need* to think too much about this in building your apps, usually if you want to get the user experience right, you'll need to know when the data is ready.
 
@@ -337,7 +336,7 @@ This way you get the full reactive power of the store.
 
 <h3 id="updating-stores">Updating stores</h3>
 
-If you need to update a store as a result of user action, you'd update the store from an event handler, just like you call Methods.
+If you need to update a store as a result of user action, you'd update the store from an event handler, just like you call [Methods](methods.html).
 
 If you need to perform complex logic in the update (e.g. not just call `.set()` etc), it's a good idea to define a mutator on the store. As the store is a singleton, you can just attach a function to the object directly:
 
@@ -365,7 +364,7 @@ Meteor.publish('todos.inList', function(listId) {
     listId: {type: String}
   }).validate({ listId });
 
-  const list = List.findOne(listId);
+  const list = Lists.findOne(listId);
 
   if (list && (!list.userId || list.userId === this.userId)) {
     return [
@@ -462,20 +461,26 @@ Meteor.publishComposite('Todos.admin.inList', function(listId) {
   const userId = this.userId;
   return {
     find() {
-      return Meteor.users.find({userId, admin: true});
+      return Meteor.users.find({_id: userId, admin: true}, {fields: {admin: 1}});
     },
     children: [{
-      find() {
+      find(user) {
         // We don't need to worry about the list.userId changing this time
-        return [
-          Lists.find(listId),
-          Todos.find({listId})
-        ];
-      }  
+        return Lists.find(listId);
+      }
+    },
+    {
+      find(user) {
+        return Todos.find({listId});
+      }
     }]
   };
 });
 ```
+
+Note that we explicitly set the `Meteor.users` query fields, as `publish-composite` publishes all of the returned cursors to the client and re-runs the child computations whenever the cursor changes.
+
+Limiting the results serves a double purpose: it both prevents sensitive fields from being disclosed to the client and limits recomputation to the relevant fields only (namely, the `admin` field).
 
 <h3 id="custom-publication">Custom publications with the low level API</h3>
 

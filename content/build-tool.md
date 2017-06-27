@@ -1,6 +1,5 @@
 ---
 title: Build System
-order: 33
 description: How to use Meteor's build system to compile your app.
 discourseTopicId: 19669
 ---
@@ -47,19 +46,44 @@ meteor add coffeescript
 
 All code written in CoffeeScript compiles to JavaScript under the hood, and is completely compatible with any code in other packages that is written in JS or ES2015.
 
+<h3 id="typescript">TypeScript</h3>
+
+[TypeScript](https://www.typescriptlang.org/) is modern JavaScript with optional types and more.
+
+Adding types will make your code more readable and less prone to runtime errors.
+
+TypeScript can be installed with:
+
+```sh
+meteor remove ecmascript
+meteor add barbatus:typescript
+```
+
+It is necessary to configure the TypeScript compiler with a `tsconfig.json` file.
+
+A complete guide on installation, configuration, and usage of TypeScript, and how type definitions for libraries are installed, can be found [here](https://medium.com/@birkskyum/modern-meteor-development-with-typescript-introduction-836f2a89f79).
+
+The guide also includes sample applications created with Angular, React, Vue, and Blaze—all written in TypeScript. See the code [here](https://github.com/birkskyum/meteor-typescript-samples).
+
+<h4 id="typescript-conditional-imports">Conditional imports</h4>
+
+TypeScript does not support nested `import` statements, therefore conditionally importing modules requires you to use the `require` statement (see [Using `require`](https://guide.meteor.com/structure.html#using-require)).
+
+To maintain type safety, you can take advantage of TypeScript's import elision and reference the types using the `typeof` keyword. See the [TypeScript handbook article](https://www.typescriptlang.org/docs/handbook/modules.html#optional-module-loading-and-other-advanced-loading-scenarios) for details or [this blog post](http://ideasintosoftware.com/typescript-conditional-imports/) for a concrete Meteor example.
+
 <h2 id="blaze-templates">Templates and HTML</h2>
 
 Since Meteor uses client-side rendering for your app's UI, all of your HTML code, UI components, and templates need to be compiled to JavaScript. There are a few options at your disposal to write your UI code.
 
 <h3 id="blaze-spacebars">Blaze HTML templates</h3>
 
-The aptly named `blaze-html-templates` package that comes with every new Meteor app by default compiles your `.html` files written using [Spacebars](blaze.html#spacebars) into Blaze-compatible JavaScript code. You can also add `blaze-html-templates` to any of your packages to compile template files located in the package.
+The aptly named `blaze-html-templates` package that comes with every new Meteor app by default compiles your `.html` files written using [Spacebars](http://blazejs.org/api/spacebars.html) into Blaze-compatible JavaScript code. You can also add `blaze-html-templates` to any of your packages to compile template files located in the package.
 
-[Read about how to use Blaze and Spacebars in the Blaze article.](blaze.html)
+[Read about how to use Blaze and Spacebars in the Blaze article.](http://blazejs.org/guide/spacebars.html)
 
 <h3 id="blaze-jade">Blaze Jade templates</h3>
 
-If you don't like the Spacebars syntax Meteor uses by default and want something more concise, you can give Jade a try by using [`dalgard:jade`](https://atmospherejs.com/dalgard/jade). This package will compile all files in your app with the `.jade` extension into Blaze-compatible code, and can be used side-by-side with `blaze-html-templates` if you want to have some of your code in Spacebars and some in Jade.
+If you don't like the Spacebars syntax Meteor uses by default and want something more concise, you can give Jade a try by using [`pacreach:jade`](https://atmospherejs.com/pacreach/jade). This package will compile all files in your app with the `.jade` extension into Blaze-compatible code, and can be used side-by-side with `blaze-html-templates` if you want to have some of your code in Spacebars and some in Jade.
 
 <h3 id="react-jsx">JSX for React</h3>
 
@@ -106,7 +130,7 @@ Read the documentation for each package listed below to see how to indicate whic
 
 <h3 id="css-importing">Importing styles</h3>
 
-In all three Meteor supported CSS pre-processors you can import other style files from both relative and absolute paths in your app and from both npm and Meteor Atmosphere packages. 
+In all three Meteor supported CSS pre-processors you can import other style files from both relative and absolute paths in your app and from both npm and Meteor Atmosphere packages.
 
 ```less
 @import '../stylesheets/colors.less';   // a relative path
@@ -198,7 +222,7 @@ Minification usually happens when you `meteor deploy` or `meteor build` your app
 
 The most powerful feature of Meteor's build system is the ability to define custom build plugins. If you find yourself writing scripts that mangle one type of file into another, merge multiple files, or something else, it's likely that these scripts would be better implemented as a build plugin. The `ecmascript`, `templating`, and `coffeescript` packages are all implemented as build plugins, so you can replace them with your own versions if you want to!
 
-[Read the documentation about build plugins.](https://github.com/meteor/meteor/wiki/Build-Plugins-API)
+[Read the documentation about build plugins.](https://docs.meteor.com/api/packagejs.html#build-plugin-api)
 
 <h3 id="types-of-build-plugins">Types of build plugins</h3>
 
@@ -214,5 +238,4 @@ Writing a build plugin is a very advanced task that only the most advanced Meteo
 
 <h3 id="caching-build-plugins">Caching</h3>
 
-The best way to make your build plugin fast is to use caching anywhere you can - the best way to save time is to do less work! Check out the [documentation about CachingCompiler](https://github.com/meteor/meteor/wiki/Build-Plugins-API#caching) to learn more. It's used in all of the above examples, so you can see how to use it by looking at them.
-
+The best way to make your build plugin fast is to use caching anywhere you can - the best way to save time is to do less work! Check out the [documentation about CachingCompiler](https://docs.meteor.com/api/packagejs.html#build-plugin-caching) to learn more. It's used in all of the above examples, so you can see how to use it by looking at them.

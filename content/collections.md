@@ -1,6 +1,5 @@
 ---
 title: Collections and Schemas
-order: 10
 description: How to define, use, and maintain MongoDB collections in Meteor.
 discourseTopicId: 19660
 ---
@@ -18,7 +17,7 @@ After reading this guide, you'll know:
 
 At its core, a web application offers its users a view into, and a way to modify, a persistent set of data. Whether managing a list of todos, or ordering a car to pick you up, you are interacting with a permanent but constantly changing data layer.
 
-In Meteor, that data layer is typically stored in MongoDB. A set of related data in MongoDB is referred to as a "collection". In Meteor you access MongoDB through [collections](http://docs.meteor.com/#/full/mongo_collection), making them the primary persistence mechanism for your app data.
+In Meteor, that data layer is typically stored in MongoDB. A set of related data in MongoDB is referred to as a "collection". In Meteor you access MongoDB through [collections](http://docs.meteor.com/api/collections.html#Mongo-Collection), making them the primary persistence mechanism for your app data.
 
 However, collections are a lot more than a way to save and retrieve data. They also provide the core of the interactive, connected user experience that users expect from the best applications. Meteor makes this user experience easy to implement.
 
@@ -29,7 +28,7 @@ In this article, we'll look closely at how collections work in various places in
 When you create a collection on the server:
 
 ```js
-Todos = new Mongo.Collection('Todos');
+Todos = new Mongo.Collection('todos');
 ```
 
 You are creating a collection within MongoDB, and an interface to that collection to be used on the server. It's a fairly straightforward layer on top of the underlying Node MongoDB driver, but with a synchronous API:
@@ -48,12 +47,12 @@ console.log(todo);
 On the client, when you write the same line:
 
 ```js
-Todos = new Mongo.Collection('Todos');
+Todos = new Mongo.Collection('todos');
 ```
 
 It does something totally different!
 
-On the client, there is no direct connection to the MongoDB database, and in fact a synchronous API to it is not possible (nor probably what you want). Instead, on the client, a collection is a client side *cache* of the database. This is achieved thanks to the [Minimongo](https://www.meteor.com/mini-databases) library---an in-memory, all JS, implementation of the MongoDB API. What this means is that on the client, when you write:
+On the client, there is no direct connection to the MongoDB database, and in fact a synchronous API to it is not possible (nor probably what you want). Instead, on the client, a collection is a client side *cache* of the database. This is achieved thanks to the [Minimongo](https://github.com/meteor/meteor/blob/master/packages/minimongo/README.md) library---an in-memory, all JS, implementation of the MongoDB API. What this means is that on the client, when you write:
 
 ```js
 // This line is changing an in-memory Minimongo data structure
@@ -70,13 +69,14 @@ To write data back to the server, you use a *Method*, the subject of the [method
 
 <h3 id="local-collections">Local collections</h3>
 
-There is a third way to use a collection in Meteor. On the client or server, if you create a collection but pass `null` instead of a name:
+There is a third way to use a collection in Meteor. On the client or server, if you create a collection in one of these two ways:
 
 ```js
 SelectedTodos = new Mongo.Collection(null);
+SelectedTodos = new Mongo.Collection('selectedtodos', {connection: null});
 ```
 
-This creates a *local collection*. This is a Minimongo collection that has no database connection (ordinarily a named collection would either be directly connected to the database on the server, or via a subscription on the client).
+This creates a *local collection*. This is a Minimongo collection that has no database connection (ordinarily a collection would either be directly connected to the database on the server, or via a subscription on the client).
 
 A local collection is a convenient way to use the full power of the Minimongo library for in-memory storage. For instance, you might use it instead of a simple array if you need to execute complex queries over your data. Or you may want to take advantage of its *reactivity* on the client to drive some UI in a way that feels natural in Meteor.
 
@@ -84,9 +84,9 @@ A local collection is a convenient way to use the full power of the Minimongo li
 
 Although MongoDB is a schema-less database, which allows maximum flexibility in data structuring, it is generally good practice to use a schema to constrain the contents of your collection to conform to a known format. If you don't, then you tend to end up needing to write defensive code to check and confirm the structure of your data as it *comes out* of the database, instead of when it *goes into* the database. As in most things, you tend to *read data more often than you write it*, and so it's usually easier, and less buggy to use a schema when writing.
 
-In Meteor, the pre-eminent schema package is [aldeed:simple-schema](http://atmospherejs.com/aldeed/simple-schema). It's an expressive, MongoDB based schema that's used to insert and update documents.
+In Meteor, the pre-eminent schema package is [aldeed:simple-schema](https://atmospherejs.com/aldeed/simple-schema). It's an expressive, MongoDB based schema that's used to insert and update documents. Another alternative is [jagi:astronomy](https://atmospherejs.com/jagi/astronomy) which is a full Object Model (OM) layer offering schema definition, server/client side validators, object methods and event handlers.
 
-To write a schema using `simple-schema`, you can simply create a new instance of the `SimpleSchema` class:
+Let's assume that we have a `Lists` collection.  To define a schema for this collection using `simple-schema`, you can simply create a new instance of the `SimpleSchema` class and attach it to the `Lists` object:
 
 ```js
 Lists.schema = new SimpleSchema({
@@ -220,7 +220,7 @@ class ListsCollection extends Mongo.Collection {
   }
 }
 
-Lists = new ListsCollection('Lists');
+Lists = new ListsCollection('lists');
 ```
 
 <h3 id="hooks">Hooks on insert/update/remove</h3>
@@ -322,12 +322,12 @@ Migrations.add({
   version: 1,
   up() {
     Lists.find({todoCount: {$exists: false}}).forEach(list => {
-      const todoCount = Todos.find({listId: list._id})).count();
+      const todoCount = Todos.find({listId: list._id}).count();
       Lists.update(list._id, {$set: {todoCount}});
     });
   },
   down() {
-    Lists.update({}, {$unset: {todoCount: true}});
+    Lists.update({}, {$unset: {todoCount: true}}, {multi: true});
   }
 });
 ```
@@ -344,7 +344,7 @@ The advantage of a bulk operation is that it only requires a single round trip t
 
 What this means is if users are accessing the site whilst the update is being prepared, it will likely go out of date! Also, a bulk update will lock the entire collection while it is being applied, which can cause a significant blip in your user experience if it takes a while. For these reason, you often need to stop your server and let your users know you are performing maintenance while the update is happening.
 
-We could write our above migration like so (note that you must be on MongoDB 2.6 or later for the bulk update operations to exist). We can access the native MongoDB API via [`Collection#rawCollection()`](http://docs.meteor.com/#/full/Mongo-Collection-rawCollection):
+We could write our above migration like so (note that you must be on MongoDB 2.6 or later for the bulk update operations to exist). We can access the native MongoDB API via [`Collection#rawCollection()`](http://docs.meteor.com/api/collections.html#Mongo-Collection-rawCollection):
 
 ```js
 Migrations.add({
@@ -352,18 +352,26 @@ Migrations.add({
   up() {
     // This is how to get access to the raw MongoDB node collection that the Meteor server collection wraps
     const batch = Lists.rawCollection().initializeUnorderedBulkOp();
+
+    //Mongo throws an error if we execute a batch operation without actual operations, e.g. when Lists was empty.
+    let hasUpdates = false;
     Lists.find({todoCount: {$exists: false}}).forEach(list => {
       const todoCount = Todos.find({listId: list._id}).count();
       // We have to use pure MongoDB syntax here, thus the `{_id: X}`
       batch.find({_id: list._id}).updateOne({$set: {todoCount}});
+      hasUpdates = true;
     });
 
-    // We need to wrap the async function to get a synchronous API that migrations expects
-    const execute = Meteor.wrapAsync(batch.execute, batch);
-    return execute();
+    if(hasUpdates){
+      // We need to wrap the async function to get a synchronous API that migrations expects
+      const execute = Meteor.wrapAsync(batch.execute, batch);
+      return execute();
+    }
+
+    return true;
   },
   down() {
-    Lists.update({}, {$unset: {todoCount: true}});
+    Lists.update({}, {$unset: {todoCount: true}}, {multi: true});
   }
 });
 ```

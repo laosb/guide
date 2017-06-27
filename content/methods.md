@@ -1,6 +1,5 @@
 ---
 title: "Methods"
-order: 12
 description: How to use Methods, Meteor's remote procedure call system, to write to the database.
 discourseTopicId: 19662
 ---
@@ -16,7 +15,7 @@ After reading this article, you'll know:
 
 Methods are Meteor's remote procedure call (RPC) system, used to save user input events and data that come from the client. If you're familiar with REST APIs or HTTP, you can think of them like POST requests to your server, but with many nice features optimized for building a modern web application. Later on in this article, we'll go into detail about some of the benefits you get from Methods that you wouldn't get from an HTTP endpoint.
 
-At its core, a Method is an API endpoint for your server; you can define a Method on the server and its counterpart on the client, then call it with some data, write to the database, and get the return value in a callback. Meteor Methods are also tightly integrated with the pub/sub and data loading systems of Meteor to allow for [Optimistic UI](http://info.meteor.com/blog/optimistic-ui-with-meteor-latency-compensation) - the ability to simulate server-side actions on the client to make your app feel faster than it actually is.
+At its core, a Method is an API endpoint for your server; you can define a Method on the server and its counterpart on the client, then call it with some data, write to the database, and get the return value in a callback. Meteor Methods are also tightly integrated with the pub/sub and data loading systems of Meteor to allow for [Optimistic UI](http://info.meteor.com/blog/optimistic-ui-with-meteor-latency-compensation)—the ability to simulate server-side actions on the client to make your app feel faster than it actually is.
 
 We'll be referring to Meteor Methods with a capital M to differentiate them from class methods in JavaScript.
 
@@ -175,6 +174,8 @@ As you can see, this approach to calling Methods results in a better development
 To alleviate some of the boilerplate that's involved in correct Method definitions, we've published a wrapper package called `mdg:validated-method` that does most of this for you. Here's the same Method as above, but defined with the package:
 
 ```js
+import { ValidatedMethod } from 'meteor/mdg:validated-method';
+
 export const updateText = new ValidatedMethod({
   name: 'todos.updateText',
   validate: new SimpleSchema({
@@ -196,7 +197,7 @@ export const updateText = new ValidatedMethod({
 });
 ```
 
-You call it the same way you call the advanced Method above, but the Method definition is significantly simpler. We believe this style of Method lets you clearly see the important parts - the name of the Method sent over the wire, the format of the expected arguments, and the JavaScript namespace by which the Method can be referenced.
+You call it the same way you call the advanced Method above, but the Method definition is significantly simpler. We believe this style of Method lets you clearly see the important parts - the name of the Method sent over the wire, the format of the expected arguments, and the JavaScript namespace by which the Method can be referenced. Validated methods only accept a single argument and a callback function.
 
 <h2 id="errors">Error handling</h2>
 
@@ -334,7 +335,7 @@ Template.Invoices_newInvoice.onCreated(function() {
 
 Template.Invoices_newInvoice.helpers({
   errors(fieldName) {
-    return this.errors.get(fieldName);
+    return Template.instance().errors.get(fieldName);
   }
 });
 

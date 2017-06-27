@@ -1,12 +1,11 @@
 ---
 title: Using npm Packages
-order: 30
 discourseTopicId: 20193
 ---
 
 <h2 id="npm-searching">Searching for packages</h2>
 
-The best way to find npm packages is by searching on [npmjs.com](https://www.npmjs.com/). There are also some websites that have special search features specifically for certain kinds of packages, like the aptly named [react-components.com](http://react-components.com/).
+You can use the official search at [npmjs.com](https://www.npmjs.com/) or see results sorted by package quality (code quality, maintenance status, development velocity, popularity etc.) at [npms.io](https://npms.io/). There are also sites that search certain types of packages, like [js.coach](https://js.coach/)'s [React](https://js.coach/react) and [React Native](https://js.coach/react-native) sections.
 
 <h2 id="client-npm">npm on the client</h2>
 
@@ -61,9 +60,11 @@ You can also import other files or JS entry points from a package:
 import { parse } from 'graphql/language';
 ```
 
+Some Meteor apps contain local Meteor packages (packages defined in the `packages/` directory of your app tree); this was an older recommendation from before Meteor had full ECMAScript support.  If your app is laid out this way, you can also `require` or `import` npm packages installed in your app from within your local Meteor packages.
+
 <h3 id="npm-styles">Importing styles from npm</h3>
 
-Using any of Meteor's [supported CSS pre-processors](build-tool.html#css) you can import other style files from both relative and absolute paths from an npm package.
+Using any of Meteor's [supported CSS pre-processors](build-tool.html#css) you can import other style files provided by an NPM into your application using both relative and absolute paths.  However, this will only work for the top-level app and will not work inside an Atmosphere package.
 
 Importing styles from an npm package with an absolute path using the `{}` syntax, for instance with Less:
 
@@ -195,7 +196,7 @@ npm install -g shrinkpack
 Then use it directly after you shrinkwrap
 
 ```bash
-meteor npm install moment
+meteor npm install --save moment
 meteor npm shrinkwrap
 shrinkpack
 ```
